@@ -1,0 +1,4 @@
+esp-inference/build/
+esp-mems/.vscode/
+esp-inference/.vscode/
+esp-inference/managed_components
