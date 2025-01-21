@@ -25,9 +25,6 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_MICRO_EXAMPLES_HELLO_WORLD_MODEL_H_
 #define TENSORFLOW_LITE_MICRO_EXAMPLES_HELLO_WORLD_MODEL_H_
 
-extern const unsigned char g_model[];
-extern const unsigned char g_model1[];
+extern  unsigned char g_model[];
 extern const int g_model_len;
-extern const int g_model_len1;
-
 #endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_HELLO_WORLD_MODEL_H_
