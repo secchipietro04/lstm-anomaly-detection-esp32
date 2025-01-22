@@ -14,6 +14,8 @@ static RNNModelHandler* self_handler = NULL;
 
 // technically not needed if input shape is the same as output shape
 // because tflite optimizes the memory and input addresses are the same as output addresses
+
+// the model can do 200 hertz (per timestep)
 static bool stepModel(void) {
     if (!self_handler || !self_handler->handler) {
         return false;

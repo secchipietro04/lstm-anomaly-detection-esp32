@@ -13,7 +13,8 @@ idf_component_register(
          "inference/model_handler.cc"
          "inference/rnn_model_handler.cc"
          "inference/model.cc"
-    PRIV_REQUIRES spi_flash
+         "sensor/sensor_interface.cc"
+    PRIV_REQUIRES spi_flash esp_timer driver
     INCLUDE_DIRS "."
 )
 

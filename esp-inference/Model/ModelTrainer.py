@@ -422,7 +422,7 @@ class LSTMModelTrainer:
             # Complex sinusoidal seasonality
             seasonality = SinusoidalSeasonality(
                 amplitude=0.0, period=timedelta(seconds=1))
-            for i in range(3, 4):
+            for i in range(3, 6):
                 seasonality += SinusoidalSeasonality(
                     amplitude=1 / (pow(i, 2)) * random.gauss(mu, sigma),
                     period=timedelta(seconds=random.gauss(
@@ -459,7 +459,7 @@ class LSTMModelTrainer:
         synthetic_data = []
 
         # Generate more diverse training samples
-        for _ in range(3):
+        for _ in range(1):
             dataset = self.generate_timeseries(
                 n_points=self.sequence_length * 10,
                 randomness=random.uniform(0.1, 0.3),
@@ -489,13 +489,14 @@ encoder = LSTMModelTrainer.export_waterfall_lstm(
     trainer.model, 1, "encoder_lstm", "encoder_lstmCell", [20, 10])
 encoder.save("encoder.keras")
 LSTMModelTrainer.export_model_to_tflite_file(encoder, "encoder.tflite")
-code.interact(local=locals())
+# code.interact(local=locals())
 trainer.model.save("autoencoder.keras")
 synthetic_data = trainer.pretrain_model()
-b = trainer.model.predict(synthetic_data)
+b = trainer.model.predict(synthetic_data+4)
+# code.interact(local=locals())
 plt.figure(figsize=(12, 6))
-plt.plot(synthetic_data[0], label="Input Time Series (a)", linestyle="--")
-plt.plot(b[0], label="Predicted Time Series (b)", linestyle="-")
+plt.plot(synthetic_data.reshape(-1), label="Input Time Series (a)", linestyle="--")
+plt.plot(b.reshape(-1), label="Predicted Time Series (b)", linestyle="-")
 plt.title("Input vs Predicted Time Series")
 plt.xlabel("Time Steps")
 plt.ylabel("Values")

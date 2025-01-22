@@ -3,6 +3,7 @@
 
 #include "driver/i2c.h"
 #include "esp_err.h"
+#include "esp_log.h"
 
 // I2C Configuration
 #define I2C_MASTER_NUM I2C_NUM_0
@@ -12,7 +13,7 @@
 #define I2C_MASTER_SDA_IO 9
 
 // 370370 Hz is the maximum frequency for the ISM330BX (even with 2.2k pull-up resistors)
-// using 350000 Hz to be safe
+// using 350 kHz to be safe
 #define I2C_MASTER_FREQ_HZ 350000
 #define I2C_MASTER_TX_BUF_DISABLE 0
 #define I2C_MASTER_RX_BUF_DISABLE 0

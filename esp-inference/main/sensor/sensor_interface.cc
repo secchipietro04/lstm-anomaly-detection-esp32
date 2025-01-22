@@ -123,3 +123,4 @@ esp_err_t ism330bx_init(ism330bx_t *sensor) {
 
     return ESP_OK;
 }
+

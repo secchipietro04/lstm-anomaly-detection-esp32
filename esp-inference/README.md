@@ -1,67 +1,51 @@
-# Hello World Example
+# Inference with LSTM Autoencoder for Anomaly Detection on ESP32
 
-This example is designed to demonstrate the absolute basics of using [TensorFlow
-Lite for Microcontrollers](https://www.tensorflow.org/lite/microcontrollers).
-It includes the full end-to-end workflow of training a model, converting it for
-use with TensorFlow Lite for Microcontrollers for running inference on a
-microcontroller.
+## Project Overview
+This project, developed during a university internship at **IOTINGA S.r.l**, explores the application of a Long Short-Term Memory (LSTM) Autoencoder for anomaly detection using gyroscope data. The primary objective is to deploy a machine learning model on an **ESP32 microcontroller** for real-time anomaly detection, demonstrating how edge computing can enable advanced analytics on low-power devices.
 
-The model is trained to replicate a `sine` function and generates a pattern of
-data to either blink LEDs or control an animation, depending on the capabilities
-of the device.
-
-## Deploy to ESP32
-
-The following instructions will help you build and deploy this sample
-to [ESP32](https://www.espressif.com/en/products/hardware/esp32/overview)
-devices using the [ESP IDF](https://github.com/espressif/esp-idf).
-
-The sample has been tested on ESP-IDF version `release/v4.2` and `release/v4.4` with the following devices:
-- [ESP32-DevKitC](http://esp-idf.readthedocs.io/en/latest/get-started/get-started-devkitc.html)
-- [ESP32-S3-DevKitC](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html)
-- [ESP-EYE](https://github.com/espressif/esp-who/blob/master/docs/en/get-started/ESP-EYE_Getting_Started_Guide.md)
-
-### Install the ESP IDF
-
-Follow the instructions of the
-[ESP-IDF get started guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html)
-to setup the toolchain and the ESP-IDF itself.
-
-The next steps assume that the
-[IDF environment variables are set](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#step-4-set-up-the-environment-variables) :
-
- * The `IDF_PATH` environment variable is set
- * `idf.py` and Xtensa-esp32 tools (e.g. `xtensa-esp32-elf-gcc`) are in `$PATH`
+## Key Features
+- **Data Collection**: Gyroscope data is acquired from the ESP32's onboard sensors or external IMU modules.
+- **Model Training**: An LSTM Autoencoder model is trained on vibration data.
+- **Anomaly Detection**: The model performs inference on the ESP32, flagging deviations as anomalies.
 
 
-### Building the example
+## Components
+### Hardware
+- **ESP32**: (ESP32-S3 used in testing) Microcontroller.
+- **Gyroscope Sensor**: (steval-mki245ka used in testing) IMU sensor for gyroscope readings.
 
-Set the chip target (For esp32s3 target, IDF version `release/v4.4` is needed):
 
-```
-idf.py set-target esp32s3
-```
+### Software
+- **Python**: For model training and preparation.
+- **TensorFlow/Keras**: Used to develop and train the LSTM Autoencoder model.
+- **TensorFlow Lite Micro**: For converting the trained model into a lightweight format suitable for ESP32.
+- **ESP-IDF**: For programming the ESP32 and deploying the model.
 
-Then build with `idf.py`
-```
-idf.py build
-```
+## Workflow
+1. **Data Collection**
 
-### Load and run the example
+2. **Model Training**
 
-To flash (replace `/dev/ttyUSB0` with the device serial port):
-```
-idf.py --port /dev/ttyUSB0 flash
-```
+3. **Model Convertion**
 
-Monitor the serial output:
-```
-idf.py --port /dev/ttyUSB0 monitor
-```
+4. **Deployment**:
+   - Load the TensorFlow Lite model onto the ESP32.
 
-Use `Ctrl+]` to exit.
+## Limitations
+    - Inference time is roughly 5000 microseconds/200 Hz so the microcontroller cannot do real time calculations if the sampling frequency it too high. The sensor and the i2c communication allow for one read every 420 microseconds/2380Hz so the ratio is roughly 12:1 
+## Future Work
+    - Explore alternative model architectures.
+      - Possibly find a viable model architecture that does not need for further training on deployment
 
-The previous two commands can be combined:
-```
-idf.py --port /dev/ttyUSB0 flash monitor
-```
+
+## Acknowledgments
+This project was made possible through the support and resources provided by **IOTINGA S.r.l** and **Università di Verona** during the internship period.
+
+
+## Contributors
+   - **Secchi Pietro Giampaolo** - Intern at IOTINGA s.r.l.
+
+## Special thanks to
+   - **Simone Camporeale**  Co-founder of IOTINGA S.r.l
+   - **Matteo Bissoli**     Co-founder of IOTINGA S.r.l
+   - **Alessandro Righi**   my tutor at IOTINGA S.r.l
