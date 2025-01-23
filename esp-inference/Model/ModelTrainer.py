@@ -27,9 +27,9 @@ class LSTMModelTrainer:
         self.model = model if model is not None else self.build_autoencoder()
 
         # Initialize dataset as an empty numpy array if not provided
-        self.dataset = dataset if dataset is not None else np.array([])
+        self.dataset = dataset if dataset is not None else []
 
-    def chunk_time_series(chunk_size, data):
+    def chunk_time_series( data,chunk_size):
 
         n_series, length, features = data.shape
         merged_chunks = []
@@ -87,7 +87,7 @@ class LSTMModelTrainer:
         if self.dataset.size == 0:
             print("Dataset is empty. Generating synthetic data...")
             self.dataset = LSTMModelTrainer.chunk_time_series(
-                self.sequence_length, self.generate_timeseries(n_points=self.sequence_length*10))
+                 self.generate_timeseries(n_points=self.sequence_length*10), self.sequence_length)
 
         print("Starting model training...")
         history = self.__train(self.model, self.dataset,
@@ -270,7 +270,7 @@ class LSTMModelTrainer:
 
         # Output layer with proper scaling
         outputs = tf.keras.layers.TimeDistributed(
-            tf.keras.layers.Dense(self.feature_size, activation='tanh')
+            tf.keras.layers.Dense(self.feature_size, activation='tanh'), name="Dense_Output"
         )(x)
 
         model = tf.keras.Model(inputs, outputs)
@@ -288,7 +288,7 @@ class LSTMModelTrainer:
 
         return model
 
-    def export_waterfall_lstm(input_model, input_size, input_layers_name, output_layers_name, units):
+    def export_waterfall_lstm(input_model, input_size, input_layers_name, output_layers_name, units, enable_dense=False, features=3):
         # Flattened input size: input step + hidden states + cell states for each LSTM layer
         flattened_input_size = input_size + sum(units) * 2
 
@@ -343,9 +343,18 @@ class LSTMModelTrainer:
             new_hidden_states.append(new_hidden_state)
             new_cell_states.append(new_cell_state)
 
-        # Dense layer for final output (if required)
-        final_output = tf.keras.layers.Dense(
-            input_size, activation='linear', name='Final_Output')(lstm_output)
+        if enable_dense:
+            # Extract the final Dense layer from the original model
+            dense_layer = None
+            for layer in input_model.layers:
+                if isinstance(layer, tf.keras.layers.TimeDistributed) and isinstance(layer.layer, tf.keras.layers.Dense):
+                    dense_layer = layer.layer
+                    break
+            
+            # Apply the Dense layer to the LSTM output
+            final_output = dense_layer(lstm_output)
+        else:
+            final_output = lstm_output
 
         # Concatenate the final output and updated states into a single output
         flattened_output = tf.keras.layers.Concatenate(name='Flattened_Output')([
@@ -360,14 +369,17 @@ class LSTMModelTrainer:
 
         # Load weights from the training model
         for i, cell in enumerate(lstm_cells):
-
             training_layer = input_model.get_layer(
                 name=f'{input_layers_name}_{i}')
             cell.set_weights(training_layer.get_weights())
 
-        return inference_model
+        if enable_dense:
+            # Load weights for the Dense layer if enabled
+            training_dense_layer = input_model.get_layer(name='Dense_Output')
+            dense_layer.set_weights(training_dense_layer.get_weights())
 
-    def export_encoder_decoder(self):
+        return inference_model
+    def export_encoder_decoder(self): 
         '''
         expected shape of the model
         input->encoder->RepeatVector->decoder->output
@@ -389,11 +401,12 @@ class LSTMModelTrainer:
         encoder = LSTMModelTrainer.export_waterfall_lstm(
             self.model, self.feature_size, "encoder_lstm", "encoder_lstmCell", self.encoder_units)
         decoder = LSTMModelTrainer.export_waterfall_lstm(
-            self.model, self.encoder_units[-1], "decoder_lstm", "decoder_lstmCell", self.decoder_units)
+            self.model, self.encoder_units[-1], "decoder_lstm", "decoder_lstmCell", self.decoder_units,True)
+
 
         return encoder, decoder
 
-    def generate_timeseries(self, n_points=None,  randomness=0.15, noise_mean=0, noise_std_factor=0.01, noise_corr_factor=0.5):
+    def generate_timeseries(self, n_points=None,  randomness=0.15, noise_mean=0, noise_std_factor=0.01, noise_corr_factor=0.5, range_=range(3,6)):
         """
         Generate a multivariate timeseries with trend, seasonality, and noise components.
 
@@ -422,7 +435,7 @@ class LSTMModelTrainer:
             # Complex sinusoidal seasonality
             seasonality = SinusoidalSeasonality(
                 amplitude=0.0, period=timedelta(seconds=1))
-            for i in range(3, 6):
+            for i in range_:
                 seasonality += SinusoidalSeasonality(
                     amplitude=1 / (pow(i, 2)) * random.gauss(mu, sigma),
                     period=timedelta(seconds=random.gauss(
@@ -463,11 +476,11 @@ class LSTMModelTrainer:
             dataset = self.generate_timeseries(
                 n_points=self.sequence_length * 10,
                 randomness=random.uniform(0.1, 0.3),
-                noise_std_factor=0.01,  # Added some noise
-                noise_corr_factor=random.uniform(0.3, 0.7)
+                noise_std_factor=0.00,  # Added some noise
+                noise_corr_factor=random.uniform(0.3, 0.7), range_=(3,4)
             )
             chunked_dataset = LSTMModelTrainer.chunk_time_series(
-                self.sequence_length, dataset)
+                 dataset, self.sequence_length)
             synthetic_data.extend(chunked_dataset)
 
         # Convert to numpy array
@@ -482,40 +495,85 @@ class LSTMModelTrainer:
                      batch_size=32, validation_split=0.2)
         return synthetic_data
 
+if __name__ == "__main__":
 
-trainer = LSTMModelTrainer(feature_size=1, sequence_length=40, encoder_units=[
-                           20, 10], decoder_units=[10, 20])
-encoder = LSTMModelTrainer.export_waterfall_lstm(
-    trainer.model, 1, "encoder_lstm", "encoder_lstmCell", [20, 10])
-encoder.save("encoder.keras")
-LSTMModelTrainer.export_model_to_tflite_file(encoder, "encoder.tflite")
-# code.interact(local=locals())
-trainer.model.save("autoencoder.keras")
-synthetic_data = trainer.pretrain_model()
-b = trainer.model.predict(synthetic_data+4)
-# code.interact(local=locals())
-plt.figure(figsize=(12, 6))
-plt.plot(synthetic_data.reshape(-1), label="Input Time Series (a)", linestyle="--")
-plt.plot(b.reshape(-1), label="Predicted Time Series (b)", linestyle="-")
-plt.title("Input vs Predicted Time Series")
-plt.xlabel("Time Steps")
-plt.ylabel("Values")
-plt.legend()
-plt.grid(True)
-plt.show()
-trainer.model.summary()
+    trainer = LSTMModelTrainer(feature_size=1, sequence_length=40, encoder_units=[
+                            20, 10], decoder_units=[10, 20])
+    encoder = LSTMModelTrainer.export_waterfall_lstm(
+        trainer.model, 1, "encoder_lstm", "encoder_lstmCell", [20, 10])
+    encoder.save("encoder.keras")
+    LSTMModelTrainer.export_model_to_tflite_file(encoder, "encoder.tflite")
+    # code.interact(local=locals())
+    trainer.model.save("autoencoder.keras")
+    synthetic_data = trainer.pretrain_model()
+    
+    synthetic_data = []
+    dataset = trainer.generate_timeseries(
+        n_points=trainer.sequence_length * 10,
+        randomness=random.uniform(0.1, 0.3),
+        noise_std_factor=0.00,  # Added some noise
+        noise_corr_factor=random.uniform(0.3, 0.7), range_=(3,3)
+    )
+    chunked_dataset = LSTMModelTrainer.chunk_time_series(
+            dataset, trainer.sequence_length)
+    synthetic_data.extend(chunked_dataset)
 
-# model = trainer.build_autoencoder()
+        # Convert to numpy array
+    synthetic_data = np.array(synthetic_data)    
+    synthetic_data2 = []
+    dataset = trainer.generate_timeseries(
+        n_points=trainer.sequence_length * 10,
+        randomness=random.uniform(0.1, 0.3),
+        noise_std_factor=0.00,  # Added some noise
+        noise_corr_factor=random.uniform(0.3, 0.7), range_=range(3,6)
+    )
+    chunked_dataset = LSTMModelTrainer.chunk_time_series(
+            dataset, trainer.sequence_length)
+    synthetic_data2.extend(chunked_dataset)
+
+        # Convert to numpy array
+    synthetic_data2 = np.array(synthetic_data2)
+
+    b = trainer.model.predict(synthetic_data)
+    c= trainer.model.predict(synthetic_data2)
+    # code.interact(local=locals())
+    fig, axs = plt.subplots(2, 1, figsize=(12, 12))  # 2 rows, 1 column
+
+    # Plot 1: Training Input vs Predicted
+    axs[0].plot(synthetic_data.reshape(-1), label="Input Time Series Train", linestyle="--")
+    axs[0].plot(b.reshape(-1), label="Predicted Time Series Train", linestyle="-")
+    axs[0].set_title("Training: Input vs Predicted Time Series")
+    axs[0].set_xlabel("Time Steps")
+    axs[0].set_ylabel("Values")
+    axs[0].legend()
+    axs[0].grid(True)
+
+    # Plot 2: Testing Input vs Predicted
+    axs[1].plot(synthetic_data2.reshape(-1), label="Input Time Series Test", linestyle="--")
+    axs[1].plot(c.reshape(-1), label="Predicted Time Series Test", linestyle="-")
+    axs[1].set_title("Testing: Input vs Predicted Time Series")
+    axs[1].set_xlabel("Time Steps")
+    axs[1].set_ylabel("Values")
+    axs[1].legend()
+    axs[1].grid(True)
+
+    # Adjust layout for better appearance
+    plt.tight_layout()
+    plt.show()
+
+    # trainer.model.summary()
+
+    # model = trainer.build_autoencoder()
 
 
-# trainer.model.summary()
-# trainer.train_autoencoder(epochs=1)
-# print(synthetic_data.shape)
+    # trainer.model.summary()
+    # trainer.train_autoencoder(epochs=1)
+    # print(synthetic_data.shape)
 
 
-# a = (trainer.generate_timeseries())
-# code.interact(local=locals())
+    # a = (trainer.generate_timeseries())
+    # code.interact(local=locals())
 
-# print(trainer.feature_size)
-# model = trainer.build_autoencoder()
-# model.save("autoencoder.keras")
+    # print(trainer.feature_size)
+    # model = trainer.build_autoencoder()
+    # model.save("autoencoder.keras")

@@ -14,7 +14,8 @@ idf_component_register(
          "inference/rnn_model_handler.cc"
          "inference/model.cc"
          "sensor/sensor_interface.cc"
-    PRIV_REQUIRES spi_flash esp_timer driver
+         "connection/connection.cc"
+    PRIV_REQUIRES spi_flash esp_timer driver esp_wifi esp_http_client nvs_flash 
     INCLUDE_DIRS "."
 )
 

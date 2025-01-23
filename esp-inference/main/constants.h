@@ -30,4 +30,7 @@ const float kXrange = 2.f * 3.14159265359f;
 extern const int kInferencesPerCycle;
 extern const int FEATURE_SIZE ;
 extern const int LSTM_UNITS ;
+
 #endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_HELLO_WORLD_CONSTANTS_H_
+
+#define TIMESTEP_SIZE 3

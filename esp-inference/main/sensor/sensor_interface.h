@@ -77,8 +77,8 @@ evice.
      |   1     |   0     |   1     |   1     | 3.84 kHz (high-perf)  |
      |   Others                                | Reserved
 */
-#define CONFIG_GYRO         0b00001000
-#define CONFIG_ACCELERATION 0b00001000
+#define CONFIG_GYRO         0b00001011
+#define CONFIG_ACCELERATION 0b00000000
 
 //enable timestamp
 #define FUNCTIONS_ENABLE_TIMESTAMP 0b01000000
