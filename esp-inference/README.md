@@ -28,14 +28,18 @@ This project, developed during a university internship at **IOTINGA S.r.l**, exp
 
 3. **Model Convertion**
 
-4. **Deployment**:
+4. **Model loading**:
    - Load the TensorFlow Lite model onto the ESP32.
 
+5. **Inference**
+
 ## Limitations
-    - Inference time is roughly 5000 microseconds/200 Hz so the microcontroller cannot do real time calculations if the sampling frequency it too high. The sensor and the i2c communication allow for one read every 420 microseconds/2380Hz so the ratio is roughly 12:1 
+    Inference time is roughly 5000 microseconds/200 Hz so the microcontroller cannot do real time calculations if the sampling frequency it too high. The sensor and the i2c communication allow for one read every 420 microseconds/2380Hz so the ratio is roughly 12:1 
 ## Future Work
-    - Explore alternative model architectures.
-      - Possibly find a viable model architecture that does not need for further training on deployment
+- Better sessions handling, both on client side and server side.
+- Trained model evaluations with test datasets.
+- Explore alternative model architectures.
+- Find a viable model architecture that does not need for further training on deployment.
 
 
 ## Acknowledgments
